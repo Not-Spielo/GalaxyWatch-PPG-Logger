@@ -1,6 +1,7 @@
 # GalaxyWatch PPG Logger
-
 PPG signal collection from Samsung Galaxy Watch using the Health Sensor SDK, with a FastAPI server for session management and OBS video synchronization.
+
+forked from [hoanghero125/GalaxyWatch-PPG-Logger](https://github.com/hoanghero125/GalaxyWatch-PPG-Logger)
 
 ## Credits
 
@@ -11,6 +12,7 @@ This project is based on **GalaxyPPG-Logger** by KAIST ICLab. The original codeb
 > *Scientific Data*, 12, 892. [https://doi.org/10.1038/s41597-025-05152-z](https://doi.org/10.1038/s41597-025-05152-z)
 
 Original repository: [Kaist-ICLab/android-tracker](https://github.com/Kaist-ICLab/android-tracker)
+
 
 ---
 
