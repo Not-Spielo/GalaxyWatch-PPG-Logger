@@ -9,14 +9,12 @@ import com.samsung.android.service.health.tracking.data.PpgType
 import kaist.iclab.galaxyppglogger.data.HealthTrackerService
 
 abstract class AbstractCollector(
-    healthTrackerService: HealthTrackerService,
-    healthTrackerType: HealthTrackerType,
-    setPpgTypes: Set<PpgType>? = null
+    private val healthTrackerService: HealthTrackerService,
+    private val healthTrackerType: HealthTrackerType,
+    private val setPpgTypes: Set<PpgType>? = null
 ) {
     private val TAG = javaClass.simpleName
-    private val healthTracker: HealthTracker = if(setPpgTypes!= null)
-        healthTrackerService.healthTrackingService.getHealthTracker(healthTrackerType, setPpgTypes)
-        else healthTrackerService.healthTrackingService.getHealthTracker(healthTrackerType)
+    private var healthTracker: HealthTracker? = null
 
     private val healthTrackerEventListener: TrackerEventListener =
         object : TrackerEventListener {
@@ -49,14 +47,26 @@ abstract class AbstractCollector(
     abstract fun onData(dataPoints: MutableList<DataPoint>)
 
     fun start() {
-        try{
-            healthTracker.setEventListener(healthTrackerEventListener)
-        } catch(e: Exception){
-            Log.e(TAG, "START: $e")
+        try {
+            if (healthTracker == null) {
+                healthTracker = if (setPpgTypes != null) {
+                    healthTrackerService.healthTrackingService.getHealthTracker(healthTrackerType, setPpgTypes)
+                } else {
+                    healthTrackerService.healthTrackingService.getHealthTracker(healthTrackerType)
+                }
+            }
+            healthTracker?.setEventListener(healthTrackerEventListener)
+        } catch (e: Exception) {
+            Log.e(TAG, "START error: $e", e)
         }
     }
 
     fun stop() {
-        healthTracker.unsetEventListener()
+        try {
+            healthTracker?.unsetEventListener()
+            healthTracker = null
+        } catch (e: Exception) {
+            Log.e(TAG, "STOP error: $e", e)
+        }
     }
 }

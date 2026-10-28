@@ -13,7 +13,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.wear.compose.material.MaterialTheme
 import androidx.activity.result.contract.ActivityResultContracts
+import kaist.iclab.galaxyppglogger.data.HealthTrackerService
 import kaist.iclab.galaxyppglogger.ui.MainScreen
+import org.koin.android.ext.android.get
 
 class MainActivity : ComponentActivity() {
 
@@ -26,23 +28,16 @@ class MainActivity : ComponentActivity() {
         }
 
         val hasBackground =
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                    checkSelfPermission(backgroundSensorPermission) == PackageManager.PERMISSION_GRANTED
+            (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) ||
+                    (checkSelfPermission(backgroundSensorPermission) == PackageManager.PERMISSION_GRANTED)
+
+        // Keep screen on during data collection
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         if (hasForeground && hasBackground) {
             launchApp()
         } else {
             foregroundPermissionLauncher.launch(foregroundPermissions.toTypedArray())
-        }
-
-        // ========== NEW: Keep screen on during data collection ==========
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        // ==============================================================
-        
-        setContent {
-            MaterialTheme {
-                MainScreen()
-            }
         }
     }
     
@@ -57,7 +52,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private val backgroundSensorPermission = Manifest.permission.BODY_SENSORS_BACKGROUND
+    private val backgroundSensorPermission =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.BODY_SENSORS_BACKGROUND
+        } else {
+            Manifest.permission.BODY_SENSORS
+        }
 
     // Step 1: Request foreground permissions
     private val foregroundPermissionLauncher = registerForActivityResult(
@@ -89,8 +89,16 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun launchApp() {
+        try {
+            val healthTrackerService: HealthTrackerService = get()
+            healthTrackerService.start()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error starting HealthTrackerService: $e")
+        }
         setContent {
-            MainScreen()
+            MaterialTheme {
+                MainScreen()
+            }
         }
     }
 

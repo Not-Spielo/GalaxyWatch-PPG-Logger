@@ -9,14 +9,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class HealthTrackerService(
-    androidContext: Context
+    private val androidContext: Context
 ) {
     private val TAG = javaClass.simpleName
     private val _connectionStateFlow = MutableStateFlow<ConnectionState>(ConnectionState.DISCONNECTED)
-    val connectionStateFlow
-        get() = _connectionStateFlow.asStateFlow()
+    val connectionStateFlow get() = _connectionStateFlow.asStateFlow()
 
-    private val connectionListener: ConnectionListener = object: ConnectionListener {
+    private val connectionListener: ConnectionListener = object : ConnectionListener {
         override fun onConnectionSuccess() {
             Log.d(TAG, "Connection Success")
             _connectionStateFlow.value = ConnectionState.CONNECTED
@@ -32,12 +31,27 @@ class HealthTrackerService(
             _connectionStateFlow.value = ConnectionState.DISCONNECTED
         }
     }
-    val healthTrackingService: HealthTrackingService = HealthTrackingService(connectionListener, androidContext)
-    fun start(){
-        healthTrackingService.connectService()
+
+    val healthTrackingService: HealthTrackingService by lazy {
+        HealthTrackingService(connectionListener, androidContext)
     }
 
-    fun finish(){
-        healthTrackingService.disconnectService()
+    fun start() {
+        try {
+            if (_connectionStateFlow.value != ConnectionState.CONNECTED) {
+                healthTrackingService.connectService()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error connecting service: $e")
+        }
+    }
+
+    fun finish() {
+        try {
+            healthTrackingService.disconnectService()
+            _connectionStateFlow.value = ConnectionState.DISCONNECTED
+        } catch (e: Exception) {
+            Log.e(TAG, "Error disconnecting service: $e")
+        }
     }
 }

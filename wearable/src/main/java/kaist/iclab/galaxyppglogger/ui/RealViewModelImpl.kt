@@ -10,9 +10,14 @@ import android.util.Log
 import kaist.iclab.galaxyppglogger.collector.CollectorController
 import kaist.iclab.galaxyppglogger.collector.CollectorService
 import kaist.iclab.galaxyppglogger.collector.PPG.PpgDao
+import kaist.iclab.galaxyppglogger.data.ConnectionState
+import kaist.iclab.galaxyppglogger.data.HealthTrackerService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
@@ -20,24 +25,48 @@ class RealViewModelImpl(
     private val application: Application,
     private val collectorController: CollectorController,
     private val ppgDao: PpgDao,
+    private val healthTrackerService: HealthTrackerService
 ) : AbstractViewModel() {
 
     private val TAG = javaClass.simpleName
 
     private val _serviceState = MutableStateFlow(ServiceState.DISCONNECTED)
-    override val serviceState
+    override val serviceState: StateFlow<ServiceState>
         get() = _serviceState.asStateFlow()
+
+    private var serviceBound = false
+    private var collectorServiceRunning = false
+
+    private val viewModelScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+    init {
+        viewModelScope.launch {
+            healthTrackerService.connectionStateFlow.collect { connectionState ->
+                updateServiceState(connectionState)
+            }
+        }
+    }
+
+    private fun updateServiceState(healthConnectionState: ConnectionState = healthTrackerService.connectionStateFlow.value) {
+        if (healthConnectionState == ConnectionState.CONNECTED) {
+            _serviceState.value = if (collectorServiceRunning) ServiceState.RUNNING else ServiceState.READY
+        } else {
+            _serviceState.value = ServiceState.DISCONNECTED
+        }
+    }
 
     override fun start() {
         Log.d(TAG, "start")
         collectorController.start()
-        _serviceState.value = ServiceState.RUNNING
+        collectorServiceRunning = true
+        updateServiceState()
     }
 
     override fun stop() {
         Log.d(TAG, "stop")
         collectorController.stop()
-        _serviceState.value = ServiceState.READY
+        collectorServiceRunning = false
+        updateServiceState()
         unbindService()
     }
 
@@ -48,21 +77,19 @@ class RealViewModelImpl(
         Log.d(TAG, "flush")
     }
 
-    private var serviceBound = false
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
-            if ((binder as CollectorService.LocalBinder).getService().isRunning) {
-                _serviceState.value = ServiceState.RUNNING
-            } else {
-                _serviceState.value = ServiceState.READY
-            }
+            val service = (binder as CollectorService.LocalBinder).getService()
+            collectorServiceRunning = service.isRunning
             serviceBound = true
-            Log.d(TAG, "Service Binded")
+            updateServiceState()
+            Log.d(TAG, "Service Bound")
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             serviceBound = false
-            _serviceState.value = ServiceState.DISCONNECTED
+            collectorServiceRunning = false
+            updateServiceState()
             Log.d(TAG, "Service Disconnected")
         }
     }
@@ -78,5 +105,10 @@ class RealViewModelImpl(
             application.applicationContext.unbindService(connection)
             serviceBound = false
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        viewModelScope.cancel()
     }
 }

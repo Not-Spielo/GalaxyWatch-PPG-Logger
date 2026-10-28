@@ -2,20 +2,33 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-feature android:name="android.hardware.type.watch" />
 
+    <!-- Standard Permissions -->
     <uses-permission android:name="android.permission.BODY_SENSORS"/>
     <uses-permission android:name="android.permission.BODY_SENSORS_BACKGROUND"/>
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH"/>
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Samsung Health Privileged Permissions -->
+    <uses-permission android:name="com.samsung.android.health.permission.HEALTH_DATA_PROVIDER" />
+
+    <!-- Package Visibility (CRITICAL to resolve Client binder is null) -->
+    <queries>
+        <package android:name="com.samsung.android.service.health.tracking" />
+        <package android:name="com.sec.android.app.shealth" />
+        <intent>
+            <action android:name="com.samsung.android.service.health.tracking.HealthTrackingService" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:name= ".MainApplication"
+        android:name=".MainApplication"
         android:theme="@android:style/Theme.DeviceDefault">
 
         <uses-library
@@ -27,6 +40,7 @@
         <meta-data
             android:name="com.google.android.wearable.ambient.enabled"
             android:value="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -37,7 +51,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".collector.CollectorService"
+
+        <service 
+            android:name=".collector.CollectorService"
             android:foregroundServiceType="health"/>
     </application>
 

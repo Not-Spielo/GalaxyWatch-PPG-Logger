@@ -49,6 +49,9 @@ class CollectorService : Service() {
     override fun onDestroy() {
         Log.d(TAG, "onDestroy called")
         isRunning = false
+        collectorController.collectors.forEach {
+            it.stop()
+        }
         if (::ongoingActivityHelper.isInitialized) {
             ongoingActivityHelper.stopOngoingActivity()
         }

@@ -1,0 +1,15 @@
+# I completely ignore the OBS setup and just click play on the device then when its done I run these below and it creates ppg.csv which has all the user data
+
+
+# To Pull Data, replace 'adb-RFAX60GQBVV-X6ZTcg' with your adb device name for the watch
+
+cmd /c "adb -s adb-RFAX60GQBVV-X6ZTcg._adb-tls-connect._tcp exec-out run-as kaist.iclab.galaxyppglogger cat databases/RoomDB > RoomDB"
+cmd /c "adb -s adb-RFAX60GQBVV-X6ZTcg._adb-tls-connect._tcp exec-out run-as kaist.iclab.galaxyppglogger cat databases/RoomDB-wal > RoomDB-wal"
+cmd /c "adb -s adb-RFAX60GQBVV-X6ZTcg._adb-tls-connect._tcp exec-out run-as kaist.iclab.galaxyppglogger cat databases/RoomDB-shm > RoomDB-shm"
+
+
+# Export PPG Table to CSV
+sqlite3 -header -csv ./RoomDB "SELECT * FROM ppg;" > ppg.csv
+
+
+# now you need to turn the data into something that we can actually look at in a csv file.

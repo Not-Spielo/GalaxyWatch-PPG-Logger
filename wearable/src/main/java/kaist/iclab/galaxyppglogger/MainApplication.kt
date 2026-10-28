@@ -16,6 +16,5 @@ class MainApplication: Application() {
             androidLogger(level = Level.NONE)
             modules(koinModule)
         }
-        get<HealthTrackerService>().start()
     }
 }

@@ -5,7 +5,7 @@ server:
 obs:
   host: "localhost"
   port: 4455
-  password: "IEC@PTIT"
+  password: "l5EwOQjloxSBc7up"
 
 paths:
   dataset_root: "../PPG_Dataset"

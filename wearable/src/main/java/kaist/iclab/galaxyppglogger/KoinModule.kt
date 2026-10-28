@@ -41,6 +41,6 @@ val koinModule = module {
     }
 
     viewModel<AbstractViewModel> {
-        RealViewModelImpl(androidApplication(), get(), get())
+        RealViewModelImpl(androidApplication(), get(), get(), get())
     }
 }
